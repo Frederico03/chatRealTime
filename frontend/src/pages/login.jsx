@@ -25,10 +25,10 @@ function Login() {
   }
 
   useEffect(() => {
-    if (localStorage.getItem('chat-app-user')) {
-      navigate('/')
+    if (localStorage.getItem('chat-app-current-user')) {
+      navigate("/");
     }
-  })
+  }, [])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -38,12 +38,11 @@ function Login() {
         username,
         password
       });
-      console.log(data.status)
       if (data.status === false)
         toast.error(data.msg, toastOptions)
       if (data.status === true) {
-        localStorage.setItem('chat-app-user', JSON.stringify(data.user))
-        navigate("/")
+        localStorage.setItem('chat-app-current-user', JSON.stringify(data.user))
+        navigate("/");
       }
     }
   }
