@@ -8,8 +8,9 @@ export const addMessage = async (req, res, next) => {
       users: [from,to],
       sender: from,
     });
-    if(data)
+    if(data){
       return res.json({ msg: "Mensagem adicionada com sucesso."});
+    }
     return res.json({msg: "Erro em adicionar mensagem no banco de dados."});
   } catch (error) {
     next(error)

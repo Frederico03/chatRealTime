@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import styled from 'styled-components'
 import Logout from './Logout'
 import ChatInput from './ChatInput'
 import Messages from './Messages'
 import axios from 'axios'
 import { getAllMessagesRoute, sendMessageRoute } from '../utils/APIRoutes'
+import { v4 as uuidv4 } from "uuid";
 
-export default function ChatContainer({ currentChat, currentUser }) {
+export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
-
+  const [arrivalMessage, setArrivalMessage] = useState(null);
+  const scrollRef = useRef();
   useEffect(() => {
     async function fetchData() {
       const response = await axios.post(getAllMessagesRoute, {
@@ -22,14 +24,39 @@ export default function ChatContainer({ currentChat, currentUser }) {
   }, [currentChat]);
 
   const handleSendMsg = async (msg) => {
-    console.log(currentUser._id)
+    console.log(currentChat, currentUser, msg)
     await axios.post(sendMessageRoute, {
       from: currentUser._id,
       to: currentChat._id,
       message: msg,
     })
-    alert(msg)
+    socket.current.emit("send-msg", {
+      to: currentChat._id,
+      from: currentUser._id,
+      message: msg,
+    })
+    const msgs = [...messages];
+    msgs.push({ fromSelf: true, message: msg });
+    setMessages(msgs)
   }
+
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.on("msg-recieve", (msg) => {
+        setArrivalMessage({ fromSelf: false, message: msg })
+        console.log(msg)
+      })
+    }
+  })
+
+  useEffect(() => {
+    arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
+  }, [arrivalMessage])
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
     <>
       {
@@ -52,7 +79,7 @@ export default function ChatContainer({ currentChat, currentUser }) {
             {
               messages.map((message) => {
                 return (
-                  <div>
+                  <div ref={scrollRef} key={uuidv4()}>
                     <div className={`message ${message.fromSelf ? "sended" : "recieved"}`}>
                       <div className="content">
                         <p>
